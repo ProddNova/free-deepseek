@@ -14,6 +14,15 @@ const MAX_MESSAGES = 20;
 const MAX_MESSAGE_LENGTH = 8000;
 const MAX_MODEL_LENGTH = 100;
 
+function readOpenRouterApiKey() {
+  const raw = process.env.OPENROUTER_API_KEY || "";
+  return raw
+    .trim()
+    .replace(/^['"]|['"]$/g, "")
+    .replace(/^Bearer\s+/i, "")
+    .trim();
+}
+
 app.use(express.json({ limit: "256kb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -29,7 +38,7 @@ function resolveModel(requested) {
 }
 
 app.post("/api/chat", async (req, res) => {
-  const apiKey = (process.env.OPENROUTER_API_KEY || "").trim();
+  const apiKey = readOpenRouterApiKey();
   if (!apiKey) {
     return res.status(500).json({
       error: "Server non configurato: manca OPENROUTER_API_KEY."
@@ -96,7 +105,7 @@ app.post("/api/chat", async (req, res) => {
       if (response.status === 401) {
         return res.status(502).json({
           ...base,
-          error: "Chiave API OpenRouter non valida o mancante."
+          error: "Chiave API OpenRouter rifiutata. Su Render inserisci solo la chiave (es. sk-or-...), senza prefisso Bearer, virgolette o spazi."
         });
       }
       if (response.status === 429) {
