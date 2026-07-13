@@ -279,10 +279,17 @@ newChatBtn.addEventListener("click", () => {
 openSettingsBtn.addEventListener("click", () => openSheet(settingsSheet));
 
 openLogsBtn.addEventListener("click", () => {
+  const willOpen = logsSheet.classList.contains("hidden");
+  if (!willOpen) {
+    logsSheet.classList.add("hidden");
+    logsSheet.setAttribute("aria-hidden", "true");
+    return;
+  }
   unseenLogs = 0;
   logBadge.classList.add("hidden");
   renderLogs();
-  openSheet(logsSheet);
+  logsSheet.classList.remove("hidden");
+  logsSheet.setAttribute("aria-hidden", "false");
 });
 
 clearLogsBtn.addEventListener("click", () => {
@@ -293,6 +300,13 @@ clearLogsBtn.addEventListener("click", () => {
 backdropEl.addEventListener("click", closeSheets);
 document.querySelectorAll("[data-close]").forEach((btn) => {
   btn.addEventListener("click", closeSheets);
+});
+
+document.querySelectorAll("[data-log-close]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    logsSheet.classList.add("hidden");
+    logsSheet.setAttribute("aria-hidden", "true");
+  });
 });
 
 modelSelect.addEventListener("change", () => {
