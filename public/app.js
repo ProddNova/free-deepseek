@@ -2,19 +2,21 @@ const STORAGE_KEY = "deepseek-chat-history";
 const MODEL_KEY = "deepseek-chat-model";
 const MAX_HISTORY = 20;
 const MAX_LOGS = 100;
-const DEFAULT_MODEL = "deepseek/deepseek-v4-flash";
+const DEFAULT_MODEL = "deepseek-v4-flash";
 
-// Su OpenRouter esiste solo "deepseek/deepseek-v4-flash" (senza suffisso).
-// Le vecchie varianti ":free" (nessun endpoint gratuito → 401) e ":code"
-// (suffisso inesistente) vengono riportate allo slug canonico. Così un
-// telefono con un valore vecchio salvato in localStorage non invia più un
-// modello rotto: il valore viene corretto al caricamento della pagina.
+// L'app usa l'API nativa DeepSeek, dove il modello è "deepseek-v4-flash"
+// (senza prefisso "deepseek/" né suffissi ":free"/":code", che sono
+// convenzioni di OpenRouter). Normalizziamo i vecchi slug in stile OpenRouter
+// verso il nome nativo, così un valore vecchio salvato in localStorage viene
+// corretto al caricamento invece di rompere la richiesta.
 function normalizeModel(value) {
   if (typeof value !== "string") return DEFAULT_MODEL;
-  const v = value.trim();
-  if (!v) return DEFAULT_MODEL;
-  if (/^deepseek\/deepseek-v4-flash(:.*)?$/i.test(v)) return DEFAULT_MODEL;
-  return v;
+  const v = value
+    .trim()
+    .replace(/^deepseek\//i, "")
+    .replace(/:.*$/, "")
+    .trim();
+  return v || DEFAULT_MODEL;
 }
 
 const messagesEl = document.getElementById("messages");
@@ -167,12 +169,14 @@ async function logEnvDebug() {
       return;
     }
 
-    const key = data.openRouterApiKey || {};
+    const key = data.apiKey || {};
     let apiKeyState;
     if (!key.cleanedPresent) {
       apiKeyState = "API key mancante";
+    } else if (key.looksLikeOpenRouterKey) {
+      apiKeyState = `Chiave OpenRouter rilevata (sk-or-…): serve una chiave DeepSeek (sk-…)`;
     } else if (key.looksLikeKey === false) {
-      apiKeyState = `API key SOSPETTA (${key.cleanedLength} caratteri, non inizia con sk-or-)`;
+      apiKeyState = `API key SOSPETTA (${key.cleanedLength} caratteri, non inizia con sk-)`;
     } else {
       apiKeyState = `API key presente (${key.cleanedLength} caratteri)`;
     }
@@ -181,9 +185,9 @@ async function logEnvDebug() {
           data.render.serviceName ? `: ${data.render.serviceName}` : ""
         }`
       : "Render non rilevato";
-    const modelState = data.openRouterModel?.present
-      ? `modello env: ${data.openRouterModel.value}`
-      : `modello default: ${data.openRouterModel?.value || DEFAULT_MODEL}`;
+    const modelState = data.model?.present
+      ? `modello env: ${data.model.value}`
+      : `modello default: ${data.model?.value || DEFAULT_MODEL}`;
 
     log(
       "info",

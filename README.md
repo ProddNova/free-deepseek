@@ -1,10 +1,16 @@
 # DeepSeek Chat
 
-Una piccola chat web che parla con un modello **DeepSeek** tramite
-[OpenRouter](https://openrouter.ai/). Backend Node.js + Express, frontend in
+Una piccola chat web che parla con un modello **DeepSeek** tramite l'**API
+ufficiale DeepSeek** ([platform.deepseek.com](https://platform.deepseek.com/)),
+compatibile con lo standard OpenAI. Backend Node.js + Express, frontend in
 HTML/CSS/JavaScript vanilla. Niente database, niente React, niente Docker.
 
 La API key resta **solo nel backend**: il frontend non la vede mai.
+
+> ℹ️ **Provider.** L'app chiama direttamente `https://api.deepseek.com`. Serve
+> quindi una **chiave DeepSeek** (inizia con `sk-...`), *non* una chiave
+> OpenRouter (`sk-or-...`): usare una chiave OpenRouter qui — o una chiave
+> DeepSeek su OpenRouter — causa un errore `401`.
 
 ## Funzionalità
 
@@ -23,17 +29,15 @@ La API key resta **solo nel backend**: il frontend non la vede mai.
 
 ## Modello
 
-Il modello predefinito è **`deepseek/deepseek-v4-flash`** (lo slug canonico su
-OpenRouter). Puoi cambiarlo al volo dal pannello Impostazioni oppure impostare
-un default lato server con la variabile `OPENROUTER_MODEL`.
+Il modello predefinito è **`deepseek-v4-flash`**. Puoi cambiarlo al volo dal
+pannello Impostazioni (es. `deepseek-v4-pro`) oppure impostare un default lato
+server con la variabile `DEEPSEEK_MODEL`.
 
-> ⚠️ **Attenzione ai suffissi.** Su OpenRouter esiste solo
-> `deepseek/deepseek-v4-flash`, senza suffisso. La variante `:free` **non**
-> esiste (il modello non ha endpoint gratuiti, quindi OpenRouter risponde
-> `401`), mentre `:code` non è un suffisso reale. Per sicurezza il server
-> riporta automaticamente allo slug canonico qualsiasi variante di V4 Flash
-> ricevuta dal client, così un vecchio valore salvato sul telefono non può più
-> rompere le richieste.
+> ⚠️ **Nomi dei modelli.** Sull'API DeepSeek il nome è `deepseek-v4-flash`,
+> senza prefisso `deepseek/` e senza suffissi `:free`/`:code` (quelle sono
+> convenzioni di OpenRouter). Per sicurezza il server normalizza
+> automaticamente i vecchi slug in stile OpenRouter verso il nome nativo, così
+> un valore vecchio salvato sul telefono non può più rompere le richieste.
 
 ## Requisiti
 
@@ -43,8 +47,8 @@ un default lato server con la variabile `OPENROUTER_MODEL`.
 
 ```bash
 npm install
-export OPENROUTER_API_KEY="la-tua-chiave"
-# opzionale: export OPENROUTER_MODEL="deepseek/deepseek-v4-flash"
+export DEEPSEEK_API_KEY="la-tua-chiave"   # inizia con sk-...
+# opzionale: export DEEPSEEK_MODEL="deepseek-v4-flash"
 npm start
 ```
 
@@ -52,13 +56,20 @@ Poi apri http://localhost:3000
 
 ## Variabili d'ambiente
 
-| Variabile             | Obbligatoria | Default                       |
-| --------------------- | ------------ | ----------------------------- |
-| `OPENROUTER_API_KEY`  | Sì           | —                             |
+| Variabile           | Obbligatoria | Default                  |
+| ------------------- | ------------ | ------------------------ |
+| `DEEPSEEK_API_KEY`  | Sì           | —                        |
+| `DEEPSEEK_MODEL`    | No           | `deepseek-v4-flash`      |
+| `DEEPSEEK_BASE_URL` | No           | `https://api.deepseek.com` |
+| `PORT`              | No           | `3000`                   |
 
-Nota: in `OPENROUTER_API_KEY` inserisci solo la chiave (es. `sk-or-...`), non `Bearer sk-or-...`.
-| `OPENROUTER_MODEL`    | No           | `deepseek/deepseek-v4-flash` |
-| `PORT`                | No           | `3000`                        |
+Note:
+- In `DEEPSEEK_API_KEY` inserisci solo la chiave (es. `sk-...`), non
+  `Bearer sk-...`, senza virgolette o spazi.
+- Per compatibilità con i deploy esistenti, se `DEEPSEEK_API_KEY` non è
+  impostata il server legge anche `OPENROUTER_API_KEY`/`OPENROUTER_MODEL`. Il
+  valore però deve comunque essere una **chiave DeepSeek**, perché le richieste
+  vanno all'API DeepSeek.
 
 ## Deploy su Render.com
 
@@ -66,8 +77,8 @@ Nota: in `OPENROUTER_API_KEY` inserisci solo la chiave (es. `sk-or-...`), non `B
 2. Su [Render](https://render.com/) crea un nuovo **Web Service** e collega il repository GitHub.
 3. **Build Command:** `npm install`
 4. **Start Command:** `npm start`
-5. Aggiungi la variabile d'ambiente `OPENROUTER_API_KEY` con la tua chiave: incolla solo il valore della chiave (es. `sk-or-...`), senza `Bearer`, virgolette o spazi.
-6. (Opzionale) aggiungi `OPENROUTER_MODEL` per scegliere un modello diverso.
+5. Aggiungi la variabile d'ambiente `DEEPSEEK_API_KEY` con la tua chiave DeepSeek: incolla solo il valore (es. `sk-...`), senza `Bearer`, virgolette o spazi.
+6. (Opzionale) aggiungi `DEEPSEEK_MODEL` per scegliere un modello diverso.
 
 Render assegna automaticamente la porta tramite `process.env.PORT`, già gestita dal server.
 
@@ -80,7 +91,7 @@ Richiesta:
 ```json
 {
   "messages": [{ "role": "user", "content": "Ciao" }],
-  "model": "deepseek/deepseek-v4-flash"
+  "model": "deepseek-v4-flash"
 }
 ```
 
@@ -92,7 +103,7 @@ Risposta:
 ```json
 {
   "message": "Risposta del modello",
-  "model": "deepseek/deepseek-v4-flash",
+  "model": "deepseek-v4-flash",
   "elapsedMs": 820
 }
 ```
