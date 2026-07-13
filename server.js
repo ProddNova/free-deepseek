@@ -14,12 +14,47 @@ const MAX_MESSAGES = 20;
 const MAX_MESSAGE_LENGTH = 8000;
 const MAX_MODEL_LENGTH = 100;
 
+function maskSecret(value) {
+  if (!value) return null;
+  if (value.length <= 8) return `${value.length} caratteri`;
+  return `${value.slice(0, 4)}…${value.slice(-4)} (${value.length} caratteri)`;
+}
+
+function getEnvDebugInfo() {
+  const rawApiKey = process.env.OPENROUTER_API_KEY || "";
+  const cleanedApiKey = readOpenRouterApiKey();
+  return {
+    nodeEnv: process.env.NODE_ENV || null,
+    render: {
+      detected: Boolean(process.env.RENDER),
+      serviceName: process.env.RENDER_SERVICE_NAME || null,
+      serviceType: process.env.RENDER_SERVICE_TYPE || null,
+      externalUrl: process.env.RENDER_EXTERNAL_URL || null,
+      gitCommit: process.env.RENDER_GIT_COMMIT || null
+    },
+    openRouterApiKey: {
+      present: Boolean(rawApiKey),
+      cleanedPresent: Boolean(cleanedApiKey),
+      rawLength: rawApiKey.length,
+      cleanedLength: cleanedApiKey.length,
+      masked: maskSecret(cleanedApiKey),
+      hasBearerPrefix: /^\s*Bearer\s+/i.test(rawApiKey),
+      hasWrappingQuotes: /^\s*['"].*['"]\s*$/.test(rawApiKey)
+    },
+    openRouterModel: {
+      present: Boolean(process.env.OPENROUTER_MODEL),
+      value: DEFAULT_MODEL
+    }
+  };
+}
+
 function readOpenRouterApiKey() {
   const raw = process.env.OPENROUTER_API_KEY || "";
   return raw
     .trim()
-    .replace(/^['"]|['"]$/g, "")
     .replace(/^Bearer\s+/i, "")
+    .trim()
+    .replace(/^['"]|['"]$/g, "")
     .trim();
 }
 
@@ -36,6 +71,10 @@ function resolveModel(requested) {
   if (!/^[a-zA-Z0-9/_.:-]+$/.test(model)) return DEFAULT_MODEL;
   return model;
 }
+
+app.get("/api/debug/env", (_req, res) => {
+  res.json(getEnvDebugInfo());
+});
 
 app.post("/api/chat", async (req, res) => {
   const apiKey = readOpenRouterApiKey();
@@ -150,5 +189,14 @@ app.post("/api/chat", async (req, res) => {
 });
 
 app.listen(PORT, () => {
+  const envDebug = getEnvDebugInfo();
   console.log(`Server in ascolto sulla porta ${PORT}`);
+  console.log("Debug variabili ambiente:", {
+    renderDetected: envDebug.render.detected,
+    renderServiceName: envDebug.render.serviceName,
+    openRouterApiKeyPresent: envDebug.openRouterApiKey.present,
+    openRouterApiKeyCleanedPresent: envDebug.openRouterApiKey.cleanedPresent,
+    openRouterApiKeyLength: envDebug.openRouterApiKey.cleanedLength,
+    openRouterModel: envDebug.openRouterModel.value
+  });
 });
