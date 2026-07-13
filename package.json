@@ -1,0 +1,17 @@
+{
+  "name": "free-deepseek",
+  "version": "1.0.0",
+  "description": "Minimal web chat that talks to a DeepSeek model via OpenRouter.",
+  "main": "server.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "license": "MIT"
+}

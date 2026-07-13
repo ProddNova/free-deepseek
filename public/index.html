@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DeepSeek Chat</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <h1>DeepSeek Chat</h1>
+        <button id="new-chat" class="btn-secondary" type="button">Nuova chat</button>
+      </header>
+
+      <main id="messages" class="messages" aria-live="polite"></main>
+
+      <div id="typing" class="typing hidden">Il modello sta rispondendo…</div>
+
+      <form id="chat-form" class="composer">
+        <textarea
+          id="input"
+          class="input"
+          rows="1"
+          placeholder="Scrivi un messaggio… (Invio per inviare, Shift+Invio per andare a capo)"
+          maxlength="8000"
+        ></textarea>
+        <button id="send" class="btn-primary" type="submit">Invia</button>
+      </form>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
