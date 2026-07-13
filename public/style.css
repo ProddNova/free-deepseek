@@ -541,3 +541,78 @@ body {
 .hidden {
   display: none !important;
 }
+
+/* ---------- Compact floating logs ---------- */
+.log-window {
+  position: fixed;
+  right: max(10px, calc((100vw - 640px) / 2 + 10px));
+  bottom: calc(var(--safe-bottom) + 76px);
+  z-index: 35;
+  width: min(92vw, 360px);
+  max-height: min(38dvh, 280px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: rgba(16, 19, 27, 0.96);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.46);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: logPop 0.18s ease;
+}
+
+@keyframes logPop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+.log-window-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.log-window-head h2 {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.log-window .logs-body {
+  padding: 10px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.text-btn.compact {
+  padding: 6px 9px;
+  font-size: 0.72rem;
+}
+
+.sheet-close.compact {
+  width: 28px;
+  height: 28px;
+  font-size: 0.8rem;
+}
+
+.log-window .log-entry {
+  padding: 8px 9px;
+  margin-bottom: 6px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+}
+
+@media (max-width: 480px) {
+  .log-window {
+    right: 8px;
+    left: 8px;
+    width: auto;
+    bottom: calc(var(--safe-bottom) + 70px);
+    max-height: 30dvh;
+  }
+}

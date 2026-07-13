@@ -40,10 +40,27 @@
             <span id="log-badge" class="badge hidden">0</span>
           </button>
           <button
+            id="new-chat"
+            class="icon-btn"
+            type="button"
+            aria-label="Nuova chat"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 5v14M5 12h14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+          <button
             id="open-settings"
             class="icon-btn"
             type="button"
-            aria-label="Impostazioni"
+            aria-label="Apri impostazioni"
+            title="Impostazioni"
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path
@@ -58,22 +75,6 @@
                 stroke="currentColor"
                 stroke-width="1.6"
                 stroke-linejoin="round"
-              />
-            </svg>
-          </button>
-          <button
-            id="new-chat"
-            class="icon-btn"
-            type="button"
-            aria-label="Nuova chat"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M12 5v14M5 12h14"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
               />
             </svg>
           </button>
@@ -150,19 +151,18 @@
       </div>
     </section>
 
-    <!-- Pannello Log -->
-    <section id="logs-sheet" class="sheet hidden" aria-hidden="true">
-      <div class="sheet-grip"></div>
-      <div class="sheet-head">
+    <!-- Finestrella Log compatta e nascondibile -->
+    <section id="logs-sheet" class="log-window hidden" aria-hidden="true">
+      <div class="log-window-head">
         <h2>Log</h2>
         <div class="head-btns">
-          <button id="clear-logs" class="text-btn" type="button">Pulisci</button>
-          <button class="sheet-close" data-close type="button" aria-label="Chiudi">
+          <button id="clear-logs" class="text-btn compact" type="button">Pulisci</button>
+          <button class="sheet-close compact" data-log-close type="button" aria-label="Nascondi log">
             ✕
           </button>
         </div>
       </div>
-      <div id="logs-body" class="sheet-body logs-body"></div>
+      <div id="logs-body" class="logs-body"></div>
     </section>
 
     <script src="app.js"></script>

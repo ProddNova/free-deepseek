@@ -29,7 +29,7 @@ function resolveModel(requested) {
 }
 
 app.post("/api/chat", async (req, res) => {
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = (process.env.OPENROUTER_API_KEY || "").trim();
   if (!apiKey) {
     return res.status(500).json({
       error: "Server non configurato: manca OPENROUTER_API_KEY."
@@ -73,7 +73,9 @@ app.post("/api/chat", async (req, res) => {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "HTTP-Referer": req.get("origin") || `${req.protocol}://${req.get("host")}`,
+        "X-Title": "DeepSeek Chat"
       },
       body: JSON.stringify({ model, messages: trimmed })
     });
