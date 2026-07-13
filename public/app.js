@@ -133,6 +133,37 @@ function renderLogs() {
   logsBody.scrollTop = 0;
 }
 
+async function logEnvDebug() {
+  try {
+    const res = await fetch("/api/debug/env", { cache: "no-store" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      log("error", "Debug env non disponibile", `HTTP ${res.status}`);
+      return;
+    }
+
+    const apiKeyState = data.openRouterApiKey?.cleanedPresent
+      ? `API key presente (${data.openRouterApiKey.cleanedLength} caratteri)`
+      : "API key mancante";
+    const renderState = data.render?.detected
+      ? `Render rilevato${
+          data.render.serviceName ? `: ${data.render.serviceName}` : ""
+        }`
+      : "Render non rilevato";
+    const modelState = data.openRouterModel?.present
+      ? `modello env: ${data.openRouterModel.value}`
+      : `modello default: ${data.openRouterModel?.value || DEFAULT_MODEL}`;
+
+    log(
+      "info",
+      "Debug variabili ambiente",
+      `${apiKeyState} · ${renderState} · ${modelState}`
+    );
+  } catch (err) {
+    log("error", "Debug env fallito", err.message || "errore di rete");
+  }
+}
+
 /* ---------------- Rendering chat ---------------- */
 function render() {
   messagesEl.innerHTML = "";
@@ -348,3 +379,4 @@ function initSettingsUI() {
 updateModelLabel();
 initSettingsUI();
 render();
+logEnvDebug();
