@@ -4,6 +4,14 @@ const MAX_HISTORY = 20;
 const MAX_LOGS = 100;
 const DEFAULT_MODEL = "deepseek/deepseek-v4-flash:code";
 
+// Migrazioni di modelli salvati in versioni precedenti. La variante ":free"
+// di DeepSeek V4 Flash su OpenRouter risponde 401 (non utilizzabile), mentre
+// ":code" funziona: se il telefono ha ancora il vecchio valore salvato lo
+// spostiamo automaticamente su quello giusto al caricamento della pagina.
+const LEGACY_MODEL_MIGRATIONS = {
+  "deepseek/deepseek-v4-flash:free": "deepseek/deepseek-v4-flash:code"
+};
+
 const messagesEl = document.getElementById("messages");
 const typingEl = document.getElementById("typing");
 const formEl = document.getElementById("chat-form");
@@ -50,7 +58,18 @@ function saveHistory() {
 
 function loadModel() {
   try {
-    return localStorage.getItem(MODEL_KEY) || DEFAULT_MODEL;
+    const stored = localStorage.getItem(MODEL_KEY);
+    if (!stored) return DEFAULT_MODEL;
+    const migrated = LEGACY_MODEL_MIGRATIONS[stored];
+    if (migrated) {
+      try {
+        localStorage.setItem(MODEL_KEY, migrated);
+      } catch (_) {
+        /* ignore */
+      }
+      return migrated;
+    }
+    return stored;
   } catch (_) {
     return DEFAULT_MODEL;
   }
