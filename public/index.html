@@ -2,32 +2,168 @@
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0b0d12" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
     <title>DeepSeek Chat</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="app">
       <header class="header">
-        <h1>DeepSeek Chat</h1>
-        <button id="new-chat" class="btn-secondary" type="button">Nuova chat</button>
+        <div class="brand">
+          <span class="brand-dot" aria-hidden="true"></span>
+          <div class="brand-text">
+            <h1>DeepSeek</h1>
+            <span id="model-label" class="model-label">flash:code</span>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button id="open-logs" class="icon-btn" type="button" aria-label="Log">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M4 5h16M4 12h16M4 19h10"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+            <span id="log-badge" class="badge hidden">0</span>
+          </button>
+          <button
+            id="open-settings"
+            class="icon-btn"
+            type="button"
+            aria-label="Impostazioni"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <path
+                d="M19.4 13a7.7 7.7 0 0 0 0-2l2-1.5-2-3.5-2.4 1a7.6 7.6 0 0 0-1.7-1L15 3H9l-.3 2.5a7.6 7.6 0 0 0-1.7 1l-2.4-1-2 3.5L4.6 11a7.7 7.7 0 0 0 0 2l-2 1.5 2 3.5 2.4-1c.5.4 1.1.7 1.7 1L9 21h6l.3-2.5c.6-.3 1.2-.6 1.7-1l2.4 1 2-3.5-2-1.5Z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+          <button
+            id="new-chat"
+            class="icon-btn"
+            type="button"
+            aria-label="Nuova chat"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 5v14M5 12h14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
       </header>
 
       <main id="messages" class="messages" aria-live="polite"></main>
 
-      <div id="typing" class="typing hidden">Il modello sta rispondendo…</div>
+      <div id="typing" class="typing hidden">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      </div>
 
       <form id="chat-form" class="composer">
         <textarea
           id="input"
           class="input"
           rows="1"
-          placeholder="Scrivi un messaggio… (Invio per inviare, Shift+Invio per andare a capo)"
+          placeholder="Scrivi un messaggio…"
           maxlength="8000"
         ></textarea>
-        <button id="send" class="btn-primary" type="submit">Invia</button>
+        <button id="send" class="send-btn" type="submit" aria-label="Invia">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M4 12l16-8-6 8 6 8-16-8Z"
+              fill="currentColor"
+            />
+          </svg>
+        </button>
       </form>
     </div>
+
+    <!-- Backdrop condiviso dagli sheet -->
+    <div id="backdrop" class="backdrop hidden"></div>
+
+    <!-- Pannello Impostazioni -->
+    <section id="settings-sheet" class="sheet hidden" aria-hidden="true">
+      <div class="sheet-grip"></div>
+      <div class="sheet-head">
+        <h2>Impostazioni</h2>
+        <button class="sheet-close" data-close type="button" aria-label="Chiudi">
+          ✕
+        </button>
+      </div>
+      <div class="sheet-body">
+        <label class="field-label" for="model-select">Modello</label>
+        <select id="model-select" class="select">
+          <option value="deepseek/deepseek-v4-flash:code">
+            DeepSeek V4 Flash (code) · gratis
+          </option>
+          <option value="deepseek/deepseek-v4-flash">DeepSeek V4 Flash</option>
+          <option value="deepseek/deepseek-v4-pro">DeepSeek V4 Pro</option>
+          <option value="deepseek/deepseek-v3.2">DeepSeek V3.2</option>
+          <option value="deepseek/deepseek-chat-v3.1">DeepSeek Chat V3.1</option>
+          <option value="deepseek/deepseek-r1">DeepSeek R1</option>
+          <option value="__custom__">Personalizzato…</option>
+        </select>
+
+        <div id="custom-model-wrap" class="field-block hidden">
+          <label class="field-label" for="custom-model">Slug personalizzato</label>
+          <input
+            id="custom-model"
+            class="text-input"
+            type="text"
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+            placeholder="es. deepseek/deepseek-v4-flash:code"
+          />
+        </div>
+
+        <p class="hint">
+          Il modello viene salvato sul telefono e usato per le prossime richieste.
+        </p>
+      </div>
+    </section>
+
+    <!-- Pannello Log -->
+    <section id="logs-sheet" class="sheet hidden" aria-hidden="true">
+      <div class="sheet-grip"></div>
+      <div class="sheet-head">
+        <h2>Log</h2>
+        <div class="head-btns">
+          <button id="clear-logs" class="text-btn" type="button">Pulisci</button>
+          <button class="sheet-close" data-close type="button" aria-label="Chiudi">
+            ✕
+          </button>
+        </div>
+      </div>
+      <div id="logs-body" class="sheet-body logs-body"></div>
+    </section>
 
     <script src="app.js"></script>
   </body>

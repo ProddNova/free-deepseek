@@ -5,14 +5,28 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const DEFAULT_MODEL = "deepseek/deepseek-v4-flash";
+// Variante gratuita "code" del modello DeepSeek V4 Flash su OpenRouter.
+const DEFAULT_MODEL =
+  process.env.OPENROUTER_MODEL || "deepseek/deepseek-v4-flash:code";
 
 // Reasonable limits to avoid oversized requests.
 const MAX_MESSAGES = 20;
 const MAX_MESSAGE_LENGTH = 8000;
+const MAX_MODEL_LENGTH = 100;
 
 app.use(express.json({ limit: "256kb" }));
 app.use(express.static(path.join(__dirname, "public")));
+
+// Sceglie il modello: quello richiesto dal client (se valido) oppure il default.
+function resolveModel(requested) {
+  if (typeof requested !== "string") return DEFAULT_MODEL;
+  const model = requested.trim();
+  if (!model) return DEFAULT_MODEL;
+  if (model.length > MAX_MODEL_LENGTH) return DEFAULT_MODEL;
+  // Slug OpenRouter: lettere, numeri, / . - _ e i due punti della variante.
+  if (!/^[a-zA-Z0-9/_.:-]+$/.test(model)) return DEFAULT_MODEL;
+  return model;
+}
 
 app.post("/api/chat", async (req, res) => {
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -51,7 +65,8 @@ app.post("/api/chat", async (req, res) => {
 
   // Keep only the last MAX_MESSAGES messages.
   const trimmed = cleaned.slice(-MAX_MESSAGES);
-  const model = process.env.OPENROUTER_MODEL || DEFAULT_MODEL;
+  const model = resolveModel(req.body?.model);
+  const started = Date.now();
 
   try {
     const response = await fetch(OPENROUTER_URL, {
@@ -63,6 +78,8 @@ app.post("/api/chat", async (req, res) => {
       body: JSON.stringify({ model, messages: trimmed })
     });
 
+    const elapsedMs = Date.now() - started;
+
     if (!response.ok) {
       let detail = "";
       try {
@@ -72,17 +89,22 @@ app.post("/api/chat", async (req, res) => {
         // ignore parse errors
       }
 
+      const base = { model, status: response.status, elapsedMs };
+
       if (response.status === 401) {
-        return res
-          .status(502)
-          .json({ error: "Chiave API OpenRouter non valida o mancante." });
+        return res.status(502).json({
+          ...base,
+          error: "Chiave API OpenRouter non valida o mancante."
+        });
       }
       if (response.status === 429) {
         return res.status(429).json({
+          ...base,
           error: "Limite di richieste raggiunto. Riprova tra poco."
         });
       }
       return res.status(502).json({
+        ...base,
         error: detail
           ? `Errore da OpenRouter: ${detail}`
           : `Errore da OpenRouter (codice ${response.status}).`
@@ -93,18 +115,26 @@ app.post("/api/chat", async (req, res) => {
     const message = data?.choices?.[0]?.message?.content;
 
     if (!message) {
-      return res
-        .status(502)
-        .json({ error: "Risposta non valida dal modello." });
+      return res.status(502).json({
+        model,
+        elapsedMs,
+        error: "Risposta non valida dal modello."
+      });
     }
 
-    return res.json({ message });
+    return res.json({
+      message,
+      model: data?.model || model,
+      elapsedMs,
+      usage: data?.usage || null
+    });
   } catch (err) {
     // Do not log the API key; log only a generic message.
     console.error("Errore nella chiamata a OpenRouter:", err.message);
-    return res
-      .status(502)
-      .json({ error: "Impossibile contattare OpenRouter. Riprova più tardi." });
+    return res.status(502).json({
+      model,
+      error: "Impossibile contattare OpenRouter. Riprova più tardi."
+    });
   }
 });
 
