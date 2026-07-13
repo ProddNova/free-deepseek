@@ -2,15 +2,20 @@ const STORAGE_KEY = "deepseek-chat-history";
 const MODEL_KEY = "deepseek-chat-model";
 const MAX_HISTORY = 20;
 const MAX_LOGS = 100;
-const DEFAULT_MODEL = "deepseek/deepseek-v4-flash:code";
+const DEFAULT_MODEL = "deepseek/deepseek-v4-flash";
 
-// Migrazioni di modelli salvati in versioni precedenti. La variante ":free"
-// di DeepSeek V4 Flash su OpenRouter risponde 401 (non utilizzabile), mentre
-// ":code" funziona: se il telefono ha ancora il vecchio valore salvato lo
-// spostiamo automaticamente su quello giusto al caricamento della pagina.
-const LEGACY_MODEL_MIGRATIONS = {
-  "deepseek/deepseek-v4-flash:free": "deepseek/deepseek-v4-flash:code"
-};
+// Su OpenRouter esiste solo "deepseek/deepseek-v4-flash" (senza suffisso).
+// Le vecchie varianti ":free" (nessun endpoint gratuito → 401) e ":code"
+// (suffisso inesistente) vengono riportate allo slug canonico. Così un
+// telefono con un valore vecchio salvato in localStorage non invia più un
+// modello rotto: il valore viene corretto al caricamento della pagina.
+function normalizeModel(value) {
+  if (typeof value !== "string") return DEFAULT_MODEL;
+  const v = value.trim();
+  if (!v) return DEFAULT_MODEL;
+  if (/^deepseek\/deepseek-v4-flash(:.*)?$/i.test(v)) return DEFAULT_MODEL;
+  return v;
+}
 
 const messagesEl = document.getElementById("messages");
 const typingEl = document.getElementById("typing");
@@ -60,25 +65,26 @@ function loadModel() {
   try {
     const stored = localStorage.getItem(MODEL_KEY);
     if (!stored) return DEFAULT_MODEL;
-    const migrated = LEGACY_MODEL_MIGRATIONS[stored];
-    if (migrated) {
+    const normalized = normalizeModel(stored);
+    if (normalized !== stored) {
       try {
-        localStorage.setItem(MODEL_KEY, migrated);
+        localStorage.setItem(MODEL_KEY, normalized);
       } catch (_) {
         /* ignore */
       }
-      return migrated;
     }
-    return stored;
+    return normalized;
   } catch (_) {
     return DEFAULT_MODEL;
   }
 }
 
 function saveModel(value) {
-  model = value;
+  // Normalizza anche qui: se l'utente digita ":free"/":code" nel campo
+  // personalizzato, viene comunque salvato lo slug canonico.
+  model = normalizeModel(value);
   try {
-    localStorage.setItem(MODEL_KEY, value);
+    localStorage.setItem(MODEL_KEY, model);
   } catch (_) {
     /* ignore */
   }
@@ -161,9 +167,15 @@ async function logEnvDebug() {
       return;
     }
 
-    const apiKeyState = data.openRouterApiKey?.cleanedPresent
-      ? `API key presente (${data.openRouterApiKey.cleanedLength} caratteri)`
-      : "API key mancante";
+    const key = data.openRouterApiKey || {};
+    let apiKeyState;
+    if (!key.cleanedPresent) {
+      apiKeyState = "API key mancante";
+    } else if (key.looksLikeKey === false) {
+      apiKeyState = `API key SOSPETTA (${key.cleanedLength} caratteri, non inizia con sk-or-)`;
+    } else {
+      apiKeyState = `API key presente (${key.cleanedLength} caratteri)`;
+    }
     const renderState = data.render?.detected
       ? `Render rilevato${
           data.render.serviceName ? `: ${data.render.serviceName}` : ""

@@ -23,10 +23,17 @@ La API key resta **solo nel backend**: il frontend non la vede mai.
 
 ## Modello
 
-Il modello predefinito è **`deepseek/deepseek-v4-flash:code`** (la variante
-gratuita "code" di DeepSeek V4 Flash su OpenRouter). Puoi cambiarlo al volo dal
-pannello Impostazioni oppure impostare un default lato server con la variabile
-`OPENROUTER_MODEL`.
+Il modello predefinito è **`deepseek/deepseek-v4-flash`** (lo slug canonico su
+OpenRouter). Puoi cambiarlo al volo dal pannello Impostazioni oppure impostare
+un default lato server con la variabile `OPENROUTER_MODEL`.
+
+> ⚠️ **Attenzione ai suffissi.** Su OpenRouter esiste solo
+> `deepseek/deepseek-v4-flash`, senza suffisso. La variante `:free` **non**
+> esiste (il modello non ha endpoint gratuiti, quindi OpenRouter risponde
+> `401`), mentre `:code` non è un suffisso reale. Per sicurezza il server
+> riporta automaticamente allo slug canonico qualsiasi variante di V4 Flash
+> ricevuta dal client, così un vecchio valore salvato sul telefono non può più
+> rompere le richieste.
 
 ## Requisiti
 
@@ -37,7 +44,7 @@ pannello Impostazioni oppure impostare un default lato server con la variabile
 ```bash
 npm install
 export OPENROUTER_API_KEY="la-tua-chiave"
-# opzionale: export OPENROUTER_MODEL="deepseek/deepseek-v4-flash:code"
+# opzionale: export OPENROUTER_MODEL="deepseek/deepseek-v4-flash"
 npm start
 ```
 
@@ -50,7 +57,7 @@ Poi apri http://localhost:3000
 | `OPENROUTER_API_KEY`  | Sì           | —                             |
 
 Nota: in `OPENROUTER_API_KEY` inserisci solo la chiave (es. `sk-or-...`), non `Bearer sk-or-...`.
-| `OPENROUTER_MODEL`    | No           | `deepseek/deepseek-v4-flash:code` |
+| `OPENROUTER_MODEL`    | No           | `deepseek/deepseek-v4-flash` |
 | `PORT`                | No           | `3000`                        |
 
 ## Deploy su Render.com
@@ -73,7 +80,7 @@ Richiesta:
 ```json
 {
   "messages": [{ "role": "user", "content": "Ciao" }],
-  "model": "deepseek/deepseek-v4-flash:code"
+  "model": "deepseek/deepseek-v4-flash"
 }
 ```
 
@@ -85,7 +92,7 @@ Risposta:
 ```json
 {
   "message": "Risposta del modello",
-  "model": "deepseek/deepseek-v4-flash:code",
+  "model": "deepseek/deepseek-v4-flash",
   "elapsedMs": 820
 }
 ```

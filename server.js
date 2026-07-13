@@ -5,9 +5,29 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-// Variante gratuita "code" del modello DeepSeek V4 Flash su OpenRouter.
-const DEFAULT_MODEL =
-  process.env.OPENROUTER_MODEL || "deepseek/deepseek-v4-flash:code";
+
+// Su OpenRouter l'UNICO slug valido è "deepseek/deepseek-v4-flash" (senza
+// suffisso). La variante ":free" NON esiste: il modello non ha endpoint
+// gratuiti, quindi OpenRouter risponde 401. Anche ":code" non è un suffisso
+// reale: "funziona" solo perché OpenRouter lo ignora e ripiega sul modello
+// base. Usiamo quindi sempre lo slug canonico.
+const CANONICAL_FLASH = "deepseek/deepseek-v4-flash";
+
+// Riporta allo slug canonico qualsiasi variante rotta di V4 Flash (":free",
+// ":code" o altri suffissi). Così, anche se un client ha ancora un vecchio
+// valore salvato in localStorage, il server non inoltra mai un modello che
+// OpenRouter rifiuta. Gli altri modelli restano invariati.
+function normalizeModel(model) {
+  if (typeof model !== "string") return CANONICAL_FLASH;
+  const trimmed = model.trim();
+  if (!trimmed) return CANONICAL_FLASH;
+  if (/^deepseek\/deepseek-v4-flash(:.*)?$/i.test(trimmed)) {
+    return CANONICAL_FLASH;
+  }
+  return trimmed;
+}
+
+const DEFAULT_MODEL = normalizeModel(process.env.OPENROUTER_MODEL || CANONICAL_FLASH);
 
 // Reasonable limits to avoid oversized requests.
 const MAX_MESSAGES = 20;
@@ -38,6 +58,9 @@ function getEnvDebugInfo() {
       rawLength: rawApiKey.length,
       cleanedLength: cleanedApiKey.length,
       masked: maskSecret(cleanedApiKey),
+      // Le chiavi OpenRouter iniziano con "sk-or-": se manca, la chiave è
+      // quasi sicuramente sbagliata o troncata (causa tipica del 401).
+      looksLikeKey: /^sk-or-/i.test(cleanedApiKey),
       hasBearerPrefix: /^\s*Bearer\s+/i.test(rawApiKey),
       hasWrappingQuotes: /^\s*['"].*['"]\s*$/.test(rawApiKey)
     },
@@ -69,7 +92,9 @@ function resolveModel(requested) {
   if (model.length > MAX_MODEL_LENGTH) return DEFAULT_MODEL;
   // Slug OpenRouter: lettere, numeri, / . - _ e i due punti della variante.
   if (!/^[a-zA-Z0-9/_.:-]+$/.test(model)) return DEFAULT_MODEL;
-  return model;
+  // Anche i modelli richiesti dal client passano dalla normalizzazione, così
+  // un vecchio ":free"/":code" salvato sul telefono viene corretto qui.
+  return normalizeModel(model);
 }
 
 app.get("/api/debug/env", (_req, res) => {
@@ -142,9 +167,13 @@ app.post("/api/chat", async (req, res) => {
       const base = { model, status: response.status, elapsedMs };
 
       if (response.status === 401) {
+        // Non diamo per scontato che sia la chiave: mostriamo il motivo reale
+        // di OpenRouter, poi un promemoria su come impostare la chiave.
+        const hint =
+          "Se persiste, controlla OPENROUTER_API_KEY su Render: incolla solo la chiave (deve iniziare con sk-or-...), senza Bearer, virgolette o spazi.";
         return res.status(502).json({
           ...base,
-          error: "Chiave API OpenRouter rifiutata. Su Render inserisci solo la chiave (es. sk-or-...), senza prefisso Bearer, virgolette o spazi."
+          error: detail ? `OpenRouter 401: ${detail}. ${hint}` : `OpenRouter 401. ${hint}`
         });
       }
       if (response.status === 429) {
