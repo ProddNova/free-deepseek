@@ -48,6 +48,8 @@ Poi apri http://localhost:3000
 | Variabile             | Obbligatoria | Default                       |
 | --------------------- | ------------ | ----------------------------- |
 | `OPENROUTER_API_KEY`  | Sì           | —                             |
+
+Nota: in `OPENROUTER_API_KEY` inserisci solo la chiave (es. `sk-or-...`), non `Bearer sk-or-...`.
 | `OPENROUTER_MODEL`    | No           | `deepseek/deepseek-v4-flash:code` |
 | `PORT`                | No           | `3000`                        |
 
@@ -57,7 +59,7 @@ Poi apri http://localhost:3000
 2. Su [Render](https://render.com/) crea un nuovo **Web Service** e collega il repository GitHub.
 3. **Build Command:** `npm install`
 4. **Start Command:** `npm start`
-5. Aggiungi la variabile d'ambiente `OPENROUTER_API_KEY` con la tua chiave.
+5. Aggiungi la variabile d'ambiente `OPENROUTER_API_KEY` con la tua chiave: incolla solo il valore della chiave (es. `sk-or-...`), senza `Bearer`, virgolette o spazi.
 6. (Opzionale) aggiungi `OPENROUTER_MODEL` per scegliere un modello diverso.
 
 Render assegna automaticamente la porta tramite `process.env.PORT`, già gestita dal server.
